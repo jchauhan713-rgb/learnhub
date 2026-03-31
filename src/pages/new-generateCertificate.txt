@@ -1,0 +1,110 @@
+const generateCertificate = () => {
+  if (!userName || userName === 'Learner') {
+    alert('Please log in to download certificate');
+    return;
+  }
+  if (!isCompleted) {
+    alert('Please complete the course first');
+    return;
+  }
+
+  const issueDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const safeUserName = userName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  const safeCourseName = course.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  const pdfFilename = `certificate-${safeUserName}-${safeCourseName}.pdf`;
+
+  const pdf = new jsPDF('portrait', 'pt', 'a4');
+  const { width, height } = pdf.internal.pageSize;
+  const margin = 72;
+  const contentWidth = width - 2 * margin;
+  const center = width / 2;
+  const contentHeight = height - 2 * margin;
+  const contentTop = margin;
+  const contentLeft = margin;
+  const contentRight = width - margin;
+
+  // 1. Gold double border around page content
+  pdf.setDrawColor(212, 175, 55); // #D4AF37 Gold
+  pdf.setLineWidth(8);
+  pdf.rect(contentLeft, contentTop, contentWidth, contentHeight, 'S');
+  pdf.setLineWidth(4);
+  pdf.rect(contentLeft + 6, contentTop + 6, contentWidth - 12, contentHeight - 12, 'S');
+
+  let y = contentTop + 80;
+
+  // 2. Title "CERTIFICATE" (30px bold, centered)
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(30);
+  pdf.setTextColor(0, 0, 0); // Black
+  pdf.text('CERTIFICATE', center, y, { align: 'center' });
+  y += 50; // Tighter for title stack, then 40pt gaps
+
+  // 3. "OF COMPLETION" (30px bold, centered)
+  pdf.text('OF COMPLETION', center, y, { align: 'center' });
+  y += 40;
+
+  // 4. Horizontal underline line (gold, centered)
+  pdf.setLineWidth(3);
+  pdf.setDrawColor(212, 175, 55);
+  const lineLength = contentWidth * 0.6;
+  const lineX = center - lineLength / 2;
+  pdf.line(lineX, y, lineX + lineLength, y);
+  pdf.setLineWidth(1);
+  y += 50;
+
+  // 5. Student username (22px bold, centered, wrapped)
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(22);
+  pdf.setTextColor(0, 0, 0);
+  const userLines = pdf.splitTextToSize(userName.toUpperCase(), contentWidth - 40);
+  pdf.text(userLines, center, y, { align: 'center' });
+  y += (userLines.length * 28) + 40;
+
+  // 6. "has successfully completed" (14px normal, centered)
+  pdf.setFont('helvetica');
+  pdf.setFontSize(14);
+  pdf.text('has successfully completed', center, y, { align: 'center' });
+  y += 40;
+
+  // 7. Course title inside rounded box (18px bold, auto width)
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(18);
+  const courseText = course.title.toUpperCase();
+  const courseLines = pdf.splitTextToSize(courseText, contentWidth * 0.8);
+  const lineHeight = 22;
+  const courseBoxHeight = (courseLines.length * lineHeight) + 40;
+  const courseBoxWidth = Math.min(contentWidth * 0.7, 450);
+  const courseBoxX = center - courseBoxWidth / 2;
+  const courseBoxY = y + 10;
+
+  // Yellow rounded box
+  pdf.setDrawColor(255, 193, 7); // #FFC107
+  pdf.setFillColor(255, 255, 255); // White fill
+  pdf.setLineWidth(3);
+  pdf.roundedRect(courseBoxX, courseBoxY, courseBoxWidth, courseBoxHeight, 12, 12, 'FD');
+
+  // Course text
+  pdf.setTextColor(0, 0, 0);
+  pdf.text(courseLines, center, courseBoxY + 28, { align: 'center' });
+  y = courseBoxY + courseBoxHeight + 40;
+
+  // 8. Description paragraph (11px normal, wrapped, centered)
+  pdf.setFont('helvetica');
+  pdf.setFontSize(11);
+  const description = `${userName} has demonstrated proficiency in all course objectives and is qualified to apply the acquired knowledge and skills professionally.`;
+  const descLines = pdf.splitTextToSize(description, contentWidth - 60);
+  pdf.text(descLines, center, y, { align: 'center' });
+  y += (descLines.length * 16) + 50;
+
+  // 9. Issue date at bottom center (14px bold)
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(14);
+  pdf.text(`Issue Date: ${issueDate}`, center, y + 20, { align: 'center' });
+
+  pdf.save(pdfFilename);
+};

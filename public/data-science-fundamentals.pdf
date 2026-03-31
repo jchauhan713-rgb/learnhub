@@ -1,0 +1,44 @@
+Data Science Fundamentals - Course Materials
+
+Learn the essential skills for data science and analytics.
+
+Course Content:
+1. Introduction to Data Science
+2. Python for Data Science
+3. Data Cleaning and Preprocessing
+4. Exploratory Data Analysis
+5. Statistical Analysis
+6. Data Visualization with Matplotlib/Seaborn
+7. Machine Learning Basics
+8. Supervised Learning Algorithms
+9. Unsupervised Learning
+10. Model Evaluation and Validation
+11. Real-world Data Science Projects
+
+Prerequisites:
+- Basic Python programming
+- Basic statistics knowledge
+- Familiarity with Jupyter notebooks
+
+What you'll build:
+- Data analysis dashboards
+- Predictive models
+- Classification systems
+- Recommendation engines
+- Data visualization reports
+
+Tools Covered:
+- Python
+- Pandas for data manipulation
+- NumPy for numerical computing
+- Scikit-learn for machine learning
+- Matplotlib/Seaborn for visualization
+- Jupyter notebooks
+- SQL for database queries
+
+Career Opportunities:
+- Data Analyst
+- Data Scientist
+- Machine Learning Engineer
+- Business Intelligence Analyst
+- Data Engineer

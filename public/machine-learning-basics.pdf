@@ -1,0 +1,40 @@
+Machine Learning Basics - Course Materials
+
+Introduction to machine learning algorithms and applications.
+
+Course Content:
+1. Introduction to Machine Learning
+2. Types of Machine Learning
+3. Data Preprocessing
+4. Supervised Learning Algorithms
+5. Unsupervised Learning
+6. Model Evaluation
+7. Neural Networks Basics
+8. Deep Learning Introduction
+9. ML Project Workflow
+10. Real-world Applications
+
+Prerequisites:
+- Python programming
+- Basic statistics
+- Linear algebra basics
+
+Libraries Covered:
+- Scikit-learn
+- TensorFlow
+- Keras
+- Pandas
+- NumPy
+- Matplotlib
+
+Projects Included:
+- House price prediction
+- Image classification
+- Customer segmentation
+- Recommendation system
+
+Career Opportunities:
+- Machine Learning Engineer
+- Data Scientist
+- AI Research Scientist
+- ML Product Manager
