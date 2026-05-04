@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   Star,
@@ -11,18 +11,50 @@ import {
   Download,
   Award,
 } from 'lucide-react'
-import jsPDF from 'jspdf'
 import courses from '../data/courses.js'
+import Certificate from '../components/Certificate.jsx'
+
+const courseLoadTimestamps = {}
 
 function CourseDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const course = courses.find((c) => c.id === Number(id))
   const [isCompleted, setIsCompleted] = useState(false)
+  const [isPurchased, setIsPurchased] = useState(false)
   const [userName, setUserName] = useState('Learner')
   const [showReadingContent, setShowReadingContent] = useState(false)
+  const [studentCount, setStudentCount] = useState(0)
+  const hasIncrementedRef = useRef(false)
+
+  const getStudentCount = (courseId, userId) => {
+    const stored = localStorage.getItem(`studentCount_${userId}_${courseId}`)
+    return stored ? Number(stored) : 0
+  }
+
+  const incrementStudentCount = (courseId, userId) => {
+    const next = getStudentCount(courseId, userId) + 1
+    localStorage.setItem(`studentCount_${userId}_${courseId}`, String(next))
+    return next
+  }
 
   const userEmail = localStorage.getItem('userEmail')
+
+  useEffect(() => {
+    if (!course || !userEmail || hasIncrementedRef.current) return
+
+    const now = Date.now()
+    const lastLoad = courseLoadTimestamps[course.id]
+    if (lastLoad && now - lastLoad < 1000) {
+      setStudentCount(getStudentCount(course.id, userEmail))
+      return
+    }
+
+    hasIncrementedRef.current = true
+    courseLoadTimestamps[course.id] = now
+    setStudentCount(incrementStudentCount(course.id, userEmail))
+  }, [])
+
   useEffect(() => {
     const savedName = localStorage.getItem('userName')
     if (savedName) {
@@ -37,6 +69,11 @@ function CourseDetails() {
     const quizCompleted = JSON.parse(localStorage.getItem(`quizCompleted_${course?.category?.toLowerCase().replace(' ', '-')}`) || 'false')
     setIsCompleted(completedCourses.includes(Number(id)) || quizCompleted)
   }, [id, course, userEmail])
+
+  useEffect(() => {
+    const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]')
+    setIsPurchased(enrolledCourses.includes(Number(id)))
+  }, [id])
 
   if (!course) {
     return (
@@ -414,185 +451,6 @@ const downloadReadingMaterial = () => {
     doc.save(filename)
   }
 
-const generateCertificate = () => {
-  if (!userName || userName === 'Learner') {
-    alert('Please log in to download certificate')
-    return
-  }
-  if (!isCompleted) {
-    alert('Please complete the course first')
-    return
-  }
-
-  const completionDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-  const safeUserName = userName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
-  const safeCourseName = course?.title?.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
-  const pdfFilename = `certificate-${safeUserName}-${safeCourseName}.pdf`
-
-  const doc = new jsPDF('pt', 'pt', 'a4')
-  const { width, height } = doc.internal.pageSize
-  const margin = 40
-  const center = width / 2
-  const brandBlue = '#2563eb'
-  const brandLight = '#DBEAFE'
-  const gold = '#2563eb'
-
-  doc.setFillColor(255, 255, 255)
-  doc.rect(0, 0, width, height, 'F')
-
-  doc.setDrawColor(gold)
-  doc.setLineWidth(12)
-  doc.rect(margin / 2, margin / 2, width - margin, height - margin, 'S')
-  doc.setLineWidth(4)
-  doc.rect(margin, margin, width - margin * 2, height - margin * 2, 'S')
-
-  const logoHeight = 24
-  const logoWidth = 40
-  const learnHubFontSize = 16
-  const titleFontSize = 24
-  const subtitleFontSize = 14
-  const nameFontSize = 20
-  const messageFontSize = 10
-  const boxPadding = 14
-  const boxLineHeight = 16 * 1.2
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(nameFontSize)
-  const nameLines = doc.splitTextToSize(userName, width - margin * 2 - 100)
-  const nameHeight = nameLines.length * nameFontSize * 1.2
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  const learnHubHeight = learnHubFontSize
-
-  doc.setFontSize(titleFontSize)
-  const titleHeight = titleFontSize
-
-  doc.setFontSize(subtitleFontSize)
-  const subtitleHeight = subtitleFontSize
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  const courseTitle = course?.title || ''
-  const courseLines = doc.splitTextToSize(courseTitle, width - margin * 2 - 120)
-  const courseWidths = courseLines.map(line => doc.getTextWidth(line))
-  const maxCourseWidth = courseWidths.length ? Math.max(...courseWidths) : 0
-  const boxWidth = Math.min(Math.max(maxCourseWidth + 40, 220), width - margin * 2 - 100)
-  const boxHeight = courseLines.length * boxLineHeight + boxPadding * 2
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(messageFontSize)
-  const description = course?.description || 'This certificate recognizes outstanding commitment and mastery demonstrated by completing the course curriculum with excellence.'
-  const descriptionLines = doc.splitTextToSize(description, width - margin * 2 - 80)
-  const descriptionHeight = descriptionLines.length * messageFontSize * 1.3
-  const messageHeight = messageFontSize * 1.2
-  const dateHeight = messageFontSize
-
-  const contentHeight =
-    logoHeight +
-    learnHubHeight +
-    titleHeight +
-    subtitleHeight +
-    nameHeight +
-    messageHeight +
-    boxHeight +
-    descriptionHeight +
-    dateHeight +
-    10 +
-    5
-
-  const totalContentHeight = height * 0.55
-  const gapCount = 6
-  const sectionGap = (totalContentHeight - contentHeight) / gapCount
-  const startY = margin + (height - margin * 2 - totalContentHeight) / 2
-
-  let currentY = startY
-  const logoX = center - logoWidth / 2
-
-  doc.setFillColor(brandBlue)
-  doc.roundedRect(logoX, currentY, logoWidth, logoHeight, 6, 6, 'F')
-  doc.setFillColor(255, 255, 255)
-  doc.rect(logoX + 10, currentY + 8, 8, 3, 'F')
-  doc.rect(logoX + 10, currentY + 17, 8, 3, 'F')
-  doc.rect(logoX + 28, currentY + 8, 8, 3, 'F')
-  doc.rect(logoX + 28, currentY + 17, 8, 3, 'F')
-  doc.setDrawColor(brandBlue)
-  doc.setLineWidth(1.2)
-  doc.line(logoX + 22, currentY + 5, logoX + 22, currentY + logoHeight - 5)
-  doc.line(logoX + 10, currentY + 4, logoX + 16, currentY + 2)
-  doc.line(logoX + 10, currentY + logoHeight - 4, logoX + 16, currentY + logoHeight - 2)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(learnHubFontSize)
-  doc.setTextColor(brandBlue)
-  doc.text('LEARNHUB', center, currentY + logoHeight + learnHubFontSize * 0.8, {
-    align: 'center',
-    charSpace: 1.2
-  })
-
-  currentY += logoHeight + learnHubHeight + sectionGap
-  doc.setFontSize(titleFontSize)
-  doc.setTextColor(0, 0, 0)
-  doc.text('CERTIFICATE', center, currentY, { align: 'center' })
-
-  currentY += titleHeight + 10
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(subtitleFontSize)
-  const subtitleText = 'OF COMPLETION'
-  doc.text(subtitleText, center, currentY, { align: 'center' })
-  const subtitleWidth = doc.getTextWidth(subtitleText)
-  doc.setLineWidth(0.8)
-  doc.setDrawColor(0, 0, 0)
-  doc.line(center - subtitleWidth / 2, currentY + 5, center + subtitleWidth / 2, currentY + 5)
-
-  currentY += subtitleHeight + 5 + sectionGap
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(nameFontSize)
-  doc.setTextColor(0, 0, 0)
-  doc.text(nameLines, center, currentY, { align: 'center' })
-
-  currentY += nameHeight + sectionGap
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(messageFontSize)
-  doc.text('has successfully completed', center, currentY, { align: 'center' })
-
-  currentY += messageHeight + sectionGap
-  const boxY = currentY
-  const boxXLeft = center - boxWidth / 2
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(18)
-  doc.setFillColor(brandLight)
-  doc.setDrawColor('#FFC107')
-  doc.setLineWidth(3)
-  doc.roundedRect(boxXLeft, boxY, boxWidth, boxHeight, 14, 14, 'FD')
-
-  doc.setFillColor(0, 0, 0)
-  let textY = boxY + boxPadding + 18
-  courseLines.forEach(line => {
-    doc.text(line, center, textY, { align: 'center' })
-    textY += boxLineHeight
-  })
-
-  currentY = boxY + boxHeight + sectionGap
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(messageFontSize)
-  doc.setTextColor(0, 0, 0)
-  doc.setLineHeightFactor(1.3)
-  doc.text(descriptionLines, center, currentY, { align: 'center' })
-
-  const issueY = currentY + descriptionHeight + sectionGap
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(messageFontSize)
-  doc.text(`Issued on: ${completionDate}`, center, issueY, { align: 'center' })
-
-  doc.save(pdfFilename)
-}
-
   const markAsCompleted = () => {
     const completedCourses = JSON.parse(localStorage.getItem('completedCourses') || '[]')
     if (!completedCourses.includes(course.id)) {
@@ -630,7 +488,7 @@ const generateCertificate = () => {
                 <div className="flex items-center gap-1.5">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   <span className="font-medium text-white">{course.rating}</span>
-                  <span>({course.students?.toLocaleString()} students)</span>
+                  <span>({studentCount.toLocaleString()} students)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-4 w-4" />
@@ -664,12 +522,19 @@ const generateCertificate = () => {
               </Link>
 
               {/* Quiz Link */}
-              <Link to={"/quiz/" + course.category.toLowerCase().replace(' ', '-')}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 py-3.5 text-sm font-semibold text-green-300 transition-colors hover:bg-green-500/20"
+              <button
+                type="button"
+                onClick={() => {
+                  if (isPurchased) {
+                    navigate('/quiz/' + course.category.toLowerCase().replace(' ', '-'))
+                  }
+                }}
+                disabled={!isPurchased}
+                className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 py-3.5 text-sm font-semibold text-green-300 transition-colors hover:bg-green-500/20 disabled:cursor-not-allowed ${!isPurchased ? 'opacity-50' : ''}`}
               >
                 <PlayCircle className="h-4 w-4" />
                 Take Quiz
-              </Link>
+              </button>
 
               {/* Reading Material Button */}
               <button
@@ -681,18 +546,7 @@ const generateCertificate = () => {
               </button>
 
               {/* Certificate Button */}
-                <button
-                onClick={generateCertificate}
-                disabled={!userEmail || !isCompleted}
-                className={'mt-3 flex w-full items-center justify-center gap-2 rounded-xl border py-3.5 text-sm font-semibold transition-colors ' + 
-                  (userEmail && isCompleted
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
-                    : 'border-gray-600 bg-gray-700 text-gray-500 cursor-not-allowed')
-                }
-              >
-                <Award className="h-4 w-4" />
-                Download Certificate
-              </button>
+              <Certificate userName={userName} course={course} userEmail={userEmail} isCompleted={isCompleted} />
 
               {/* Mark as Completed (for demo) */}
               {!isCompleted && (
@@ -769,7 +623,7 @@ const generateCertificate = () => {
               </p>
               <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                 <Users className="h-4 w-4" />
-                <span>{course.students?.toLocaleString()} students</span>
+                <span>{studentCount.toLocaleString()} students</span>
               </div>
             </div>
           </div>

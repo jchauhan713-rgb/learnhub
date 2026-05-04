@@ -1,7 +1,21 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, Play } from 'lucide-react'
 
 function CourseCard({ course }) {
+  const [studentCount, setStudentCount] = useState(0)
+  const userEmail = localStorage.getItem('userEmail')
+  const countKey = `studentCount_${userEmail}_${course.id}`
+
+  useEffect(() => {
+    if (!userEmail) {
+      setStudentCount(0)
+      return
+    }
+    const stored = localStorage.getItem(countKey)
+    setStudentCount(stored ? Number(stored) : 0)
+  }, [countKey, userEmail])
+
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative overflow-hidden">
@@ -25,7 +39,7 @@ function CourseCard({ course }) {
         <div className="mt-3 flex items-center gap-1">
           <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
           <span className="text-sm font-medium text-gray-900">{course.rating}</span>
-          <span className="text-sm text-gray-400">({course.students?.toLocaleString()} students)</span>
+          <span className="text-sm text-gray-400">({studentCount.toLocaleString()} students)</span>
         </div>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span className="text-lg font-bold text-gray-900">{'₹'}{course.price}</span>

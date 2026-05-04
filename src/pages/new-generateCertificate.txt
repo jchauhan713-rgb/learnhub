@@ -29,7 +29,7 @@ const generateCertificate = () => {
   const contentRight = width - margin;
 
   // 1. Gold double border around page content
-  pdf.setDrawColor(212, 175, 55); // #D4AF37 Gold
+  pdf.setDrawColor(212, 175, 55); // #35a2f0 Gold
   pdf.setLineWidth(8);
   pdf.rect(contentLeft, contentTop, contentWidth, contentHeight, 'S');
   pdf.setLineWidth(4);
@@ -83,7 +83,7 @@ const generateCertificate = () => {
   const courseBoxY = y + 10;
 
   // Yellow rounded box
-  pdf.setDrawColor(255, 193, 7); // #FFC107
+  pdf.setDrawColor(255, 193, 7); // #35a2f0
   pdf.setFillColor(255, 255, 255); // White fill
   pdf.setLineWidth(3);
   pdf.roundedRect(courseBoxX, courseBoxY, courseBoxWidth, courseBoxHeight, 12, 12, 'FD');
