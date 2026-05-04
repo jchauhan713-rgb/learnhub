@@ -12,7 +12,7 @@ function ManageCourses() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [isLocalCourse, setIsLocalCourse] = useState(false)
-
+// Manage Courses - LearnHub Admin
   useEffect(() => {
     loadCourses()
 
