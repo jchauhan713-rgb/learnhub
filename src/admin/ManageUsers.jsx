@@ -12,7 +12,7 @@ function ManageUsers() {
 
   useEffect(() => {
     loadUsers()
-
+// Manage Users - LearnHub Admin
     // Listen for user data changes (e.g., when new users register)
     const handleUserDataChange = () => {
       loadUsers()
